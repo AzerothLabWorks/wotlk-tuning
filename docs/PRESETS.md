@@ -100,6 +100,101 @@ Primary intent:
 - boost WSG, AB, and AV reputation gains
 - keep leveling moderately boosted
 
+## casual-weekend
+
+Good for players who only have short play sessions and want relaxed private
+server pacing.
+
+Primary intent:
+
+- keep leveling, reputation, money, and loot moving
+- reduce repeat-start friction
+- make dual spec available early
+
+Default flavor:
+
+- 3x XP
+- 3x reputation
+- 2x item drops
+- 3x money
+- 2x skill gains
+
+## profession-friendly
+
+Good for players who like crafting, gathering, and self-sufficiency.
+
+Primary intent:
+
+- speed up profession catch-up
+- keep leveling moderate
+- make gathering and weapon skill gains less grindy
+
+Default flavor:
+
+- 2x XP
+- 2x reputation
+- 1.5x item drops
+- 2x money
+- 5x skill gains
+- higher orange, yellow, and green skill-up chances
+
+## pvp-friendly
+
+Good for private servers where battlegrounds or arenas are part of the fun but
+rewards need to move faster.
+
+Primary intent:
+
+- boost honor and arena points
+- boost WSG, AB, and AV reputation
+- make dual spec available earlier
+
+Default flavor:
+
+- 2x XP
+- 2x reputation
+- 3x honor
+- 3x arena points
+- 3x battleground reputation
+
+## group-friendly
+
+Good for small groups running dungeons together.
+
+Primary intent:
+
+- improve group loot pacing
+- reduce repair pain
+- make instance resets friendlier
+
+Default flavor:
+
+- 2x XP
+- 2x reputation
+- 2x item drops
+- 2x money
+- 1.25x referenced/grouped loot amount
+- 0.5x instance reset time
+
+## hardcore-lite
+
+Good for players who want slower progression without adding database rules,
+permadeath, or source patches.
+
+Primary intent:
+
+- slow leveling slightly
+- reduce loot and money
+- make repairs matter more
+
+Default flavor:
+
+- 0.75x XP
+- 1x reputation
+- 0.75x item drops
+- 0.75x money
+- 1.5x repair cost
+
 ## Common Overrides
 
 Any preset can be customized:

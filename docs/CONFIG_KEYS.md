@@ -41,6 +41,10 @@ tuned carefully because they affect grouped/reference loot behavior.
 - `SkillGain.Defense`
 - `SkillGain.Gathering`
 - `SkillGain.Weapon`
+- `SkillChance.Orange`
+- `SkillChance.Yellow`
+- `SkillChance.Green`
+- `SkillChance.Grey`
 
 ## Character Convenience
 
@@ -62,3 +66,11 @@ tuned carefully because they affect grouped/reference loot behavior.
 
 Performance profiles are deliberately small. The goal is to provide a safe first
 pass, not to pretend one config can perfectly tune every host.
+
+## PvP And Group-Friendly Values
+
+- `Rate.Honor`
+- `Rate.ArenaPoints`
+- `Rate.InstanceResetTime`
+
+These are used by the Phase 2 `pvp-friendly` and `group-friendly` presets.

@@ -21,7 +21,7 @@ database backups, and test on a non-production copy first when possible.
 
 ## What It Tunes
 
-Phase 1 config tuning includes:
+Config tuning includes:
 
 - XP rates for kills, quests, dungeon finder quests, exploration, and pets
 - reputation gain rates
@@ -31,6 +31,9 @@ Phase 1 config tuning includes:
 - cautious performance profiles for low, medium, and high-resource hosts
 - Docker Compose environment override alignment
 - safety checks, timestamped backups, and restore from the latest tuner backup
+- plain-English preset inspection with `show-preset`
+- compact current-rate diagnostics with `diagnose-rates`
+- named config snapshots for safer experimentation
 
 ## Requirements
 
@@ -250,6 +253,35 @@ Show presets:
 ./scripts/wotlk-tuner.sh list-presets
 ```
 
+Inspect one preset before applying it:
+
+```bash
+./scripts/wotlk-tuner.sh show-preset casual-weekend
+```
+
+Additional Phase 2 presets:
+
+`casual-weekend`
+
+Relaxed 3x pacing for short play sessions.
+
+`profession-friendly`
+
+Fast profession and gathering progression with moderate leveling support.
+
+`pvp-friendly`
+
+Boosts honor, arena points, and battleground reputation.
+
+`group-friendly`
+
+Small-group and dungeon-friendly loot and reset pacing.
+
+`hardcore-lite`
+
+Slower progression, leaner drops, and higher repair cost without adding database
+or source-code hardcore rules.
+
 ## Performance Profiles
 
 Performance profiles are intentionally conservative. They tune a small set of
@@ -269,14 +301,50 @@ Suggested starting points:
 
 ```bash
 ./scripts/wotlk-tuner.sh list-presets
+./scripts/wotlk-tuner.sh show-preset casual-weekend
 ./scripts/wotlk-tuner.sh list-performance
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk doctor
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk diagnose-rates
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk snapshot before-testing
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk --dry-run apply-preset solo-friendly
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset fast-leveling --xp 3 --restart
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-snapshot before-testing
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-latest
 ```
 
-## Backups And Restore
+## Diagnostics
+
+Use `diagnose-rates` to show current tuning values in one compact report:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk diagnose-rates
+```
+
+This is useful before and after applying presets, or when helping someone else
+understand how their server is currently tuned.
+
+## Snapshots, Backups, And Restore
+
+Named snapshots are best before experimenting:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk snapshot before-fast-leveling
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk list-snapshots
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-snapshot before-fast-leveling
+```
+
+Snapshots save:
+
+- `worldserver.conf`
+- `docker-compose.override.yml` when it exists
+
+They are stored under your server folder in:
+
+```text
+.wotlk-tuner/snapshots/
+```
+
+Timestamped backups are still created automatically before tuner edits.
 
 Before editing an existing config or Docker override, the script creates a
 timestamped backup next to the file:
