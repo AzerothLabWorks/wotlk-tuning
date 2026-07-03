@@ -1,0 +1,3 @@
+services:
+  ac-worldserver:
+    image: azerothcore/ac-wotlk-worldserver:latest
