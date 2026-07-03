@@ -12,6 +12,13 @@ The safety model is simple:
 Phase 2 adds named snapshots so you can save a known-good tuning state before
 trying several presets.
 
+The tuner also creates one automatic baseline snapshot before the first command
+that changes server tuning:
+
+```text
+baseline-before-wotlk-tuner
+```
+
 ## Dry Run
 
 Dry run prints intended changes without editing files:
@@ -31,6 +38,15 @@ docker-compose.override.yml.bak.YYYYMMDD-HHMMSS
 ```
 
 ## Named Snapshots
+
+The automatic baseline snapshot is the easiest way to undo tuner experiments:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-baseline
+```
+
+This restores the config state from before the tuner first applied a preset,
+custom override, or default reset.
 
 Create a named snapshot before experimenting:
 
@@ -57,6 +73,24 @@ Snapshots live inside the server folder:
 ```
 
 Snapshot names may only contain letters, numbers, dots, dashes, and underscores.
+
+## Default Values
+
+`apply-defaults` is different from `restore-baseline`.
+
+`restore-baseline` restores your server's pre-tuner values. This may include your
+own custom settings.
+
+`apply-defaults` writes conservative default-style values for common tuning keys:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk --dry-run apply-defaults
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-defaults
+```
+
+Use `restore-baseline` when you want to undo tuner changes. Use `apply-defaults`
+when you intentionally want to move managed tuning keys back toward normal
+AzerothCore values.
 
 ## Restore
 

@@ -3,6 +3,8 @@
 This project writes normal AzerothCore `worldserver.conf` properties. It does
 not edit the database in phase 1.
 
+For cherry-picked commands, see [CUSTOM_ADJUSTMENTS.md](CUSTOM_ADJUSTMENTS.md).
+
 ## XP
 
 - `Rate.XP.Kill`

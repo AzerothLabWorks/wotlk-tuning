@@ -34,6 +34,8 @@ Config tuning includes:
 - plain-English preset inspection with `show-preset`
 - compact current-rate diagnostics with `diagnose-rates`
 - named config snapshots for safer experimentation
+- automatic baseline snapshot before the first tuner apply command
+- direct cherry-picked tuning with `apply-custom`
 
 ## Requirements
 
@@ -196,6 +198,20 @@ When the dry run looks correct, run the same command without `--dry-run`.
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset solo-friendly
 ```
 
+The first time you apply a preset, custom change, or defaults, the tuner
+automatically saves a snapshot named:
+
+```text
+baseline-before-wotlk-tuner
+```
+
+Use this if you want to return to the settings your server had before this tuner
+made its first change:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-baseline
+```
+
 To apply and restart `ac-worldserver` in one command:
 
 ```bash
@@ -213,6 +229,46 @@ If you want a Steam Deck or lower-resource profile:
 ```bash
 ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset solo-friendly --performance low --restart
 ```
+
+## Cherry-Pick Adjustments
+
+You do not have to use a full preset. Use `apply-custom` when you only want to
+change specific values.
+
+Examples:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk --dry-run apply-custom --xp 2
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --xp 2 --rep 3 --money 2
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --kill-xp 1.5 --quest-xp 3
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --drop 2 --money 3
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --honor 3 --arena 3
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --repair-cost 0.5 --dual-spec-level 20
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --performance low
+```
+
+Supported cherry-pick options:
+
+- `--xp`, `--kill-xp`, `--quest-xp`, `--explore-xp`, `--pet-xp`
+- `--rep`
+- `--drop`, `--referenced-drop`, `--group-drop`
+- `--money`
+- `--skill`
+- `--honor`, `--arena`
+- `--repair-cost`
+- `--start-level`, `--start-money`, `--dual-spec-level`
+- `--skip-cinematics`
+- `--instance-reset`
+- `--performance low|medium|high`
+
+You can also combine a preset with overrides. This applies the preset first, then
+your overrides:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset fast-leveling --xp 3 --money 2
+```
+
+Use `diagnose-rates` after any change to confirm the final values.
 
 ## Presets
 
@@ -323,7 +379,29 @@ Use `diagnose-rates` to show current tuning values in one compact report:
 This is useful before and after applying presets, or when helping someone else
 understand how their server is currently tuned.
 
-## Snapshots, Backups, And Restore
+## Defaults, Snapshots, Backups, And Restore
+
+There are two different ways to go back:
+
+- `restore-baseline` restores the automatic snapshot from before this tuner first
+  changed your server.
+- `apply-defaults` writes conservative AzerothCore-style default values for the
+  common tuning keys this tool manages.
+
+For most people, `restore-baseline` is the safer “undo my tuner experiment”
+choice:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-baseline
+```
+
+Use `apply-defaults` when you specifically want common tuning keys set back to
+default-style values:
+
+```bash
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk --dry-run apply-defaults
+./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-defaults --restart
+```
 
 Named snapshots are best before experimenting:
 

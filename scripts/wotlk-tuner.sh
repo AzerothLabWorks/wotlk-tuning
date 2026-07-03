@@ -20,10 +20,18 @@ START_LEVEL=""
 START_MONEY=""
 DUAL_SPEC_LEVEL=""
 PERFORMANCE=""
+HONOR_RATE=""
+ARENA_RATE=""
+REPAIR_COST=""
+SKIP_CINEMATICS=""
+REFERENCED_DROP_RATE=""
+GROUP_DROP_RATE=""
+INSTANCE_RESET_RATE=""
 
 BACKUP_STAMP="$(date +%Y%m%d-%H%M%S)"
 BACKED_UP_FILES=""
 DRY_RUN_COMPOSE_OVERRIDE_ANNOUNCED=0
+BASELINE_SNAPSHOT_NAME="baseline-before-wotlk-tuner"
 
 usage() {
   cat <<'USAGE'
@@ -49,6 +57,13 @@ Options:
   --start-money COPPER    Override new character starting money in copper.
   --dual-spec-level N     Override dual talent specialization level.
   --performance NAME      Apply a performance profile: low, medium, high.
+  --honor N               Override honor rate.
+  --arena N               Override arena point rate.
+  --repair-cost N         Override repair cost rate.
+  --skip-cinematics N     Override cinematic skipping: 0, 1, or 2.
+  --referenced-drop N     Override referenced loot amount rate.
+  --group-drop N          Override grouped loot amount rate.
+  --instance-reset N      Override instance reset time rate.
   -h, --help              Show this help.
 
 Commands:
@@ -58,9 +73,12 @@ Commands:
   doctor                  Check install layout and important settings.
   diagnose-rates          Show current tuning values in a compact report.
   apply-preset NAME       Apply a config preset.
+  apply-custom            Apply only the override options you provide.
+  apply-defaults          Apply conservative default values for common tuning keys.
   snapshot NAME           Save named config snapshots before experimenting.
   list-snapshots          Show named config snapshots.
   restore-snapshot NAME   Restore a named config snapshot.
+  restore-baseline        Restore the automatic pre-tuner baseline snapshot.
   restore-latest          Restore latest tuner backups for config/compose files.
   restart                 Restart ac-worldserver with Docker Compose.
 
@@ -83,7 +101,10 @@ Examples:
   ./scripts/wotlk-tuner.sh show-preset casual-weekend
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk diagnose-rates
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk snapshot before-fast-leveling
+  ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-custom --xp 2 --rep 3 --money 2
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset fast-leveling --xp 5 --restart
+  ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-defaults --restart
+  ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-baseline --restart
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-snapshot before-fast-leveling
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk apply-preset alt-friendly --performance low
   ./scripts/wotlk-tuner.sh --server-dir ~/azerothcore-wotlk restore-latest --restart
@@ -125,8 +146,15 @@ parse_args() {
       --start-money) START_MONEY="${2:-}"; shift 2 ;;
       --dual-spec-level) DUAL_SPEC_LEVEL="${2:-}"; shift 2 ;;
       --performance) PERFORMANCE="${2:-}"; shift 2 ;;
+      --honor) HONOR_RATE="${2:-}"; shift 2 ;;
+      --arena) ARENA_RATE="${2:-}"; shift 2 ;;
+      --repair-cost) REPAIR_COST="${2:-}"; shift 2 ;;
+      --skip-cinematics) SKIP_CINEMATICS="${2:-}"; shift 2 ;;
+      --referenced-drop) REFERENCED_DROP_RATE="${2:-}"; shift 2 ;;
+      --group-drop) GROUP_DROP_RATE="${2:-}"; shift 2 ;;
+      --instance-reset) INSTANCE_RESET_RATE="${2:-}"; shift 2 ;;
       -h|--help) usage; exit 0 ;;
-      list-presets|show-preset|list-performance|doctor|diagnose-rates|apply-preset|snapshot|list-snapshots|restore-snapshot|restore-latest|restart)
+      list-presets|show-preset|list-performance|doctor|diagnose-rates|apply-preset|apply-custom|apply-defaults|snapshot|list-snapshots|restore-snapshot|restore-baseline|restore-latest|restart)
         [[ -z "$COMMAND" ]] || die "Only one command can be used at a time."
         COMMAND="$1"
         shift
@@ -337,6 +365,10 @@ snapshot_root() {
 snapshot_dir() {
   local name="$1"
   printf '%s/%s\n' "$(snapshot_root)" "$name"
+}
+
+baseline_snapshot_dir() {
+  snapshot_dir "$BASELINE_SNAPSHOT_NAME"
 }
 
 set_conf_value() {
@@ -686,7 +718,18 @@ apply_overrides() {
   if [[ -n "$START_LEVEL" ]]; then require_integer "--start-level" "$START_LEVEL"; set_world_value "$config" "StartPlayerLevel" "$START_LEVEL"; fi
   if [[ -n "$START_MONEY" ]]; then require_integer "--start-money" "$START_MONEY"; set_world_value "$config" "StartPlayerMoney" "$START_MONEY"; fi
   if [[ -n "$DUAL_SPEC_LEVEL" ]]; then require_integer "--dual-spec-level" "$DUAL_SPEC_LEVEL"; set_world_value "$config" "MinDualSpecLevel" "$DUAL_SPEC_LEVEL"; fi
+  if [[ -n "$HONOR_RATE" ]]; then require_number "--honor" "$HONOR_RATE"; set_world_value "$config" "Rate.Honor" "$HONOR_RATE"; fi
+  if [[ -n "$ARENA_RATE" ]]; then require_number "--arena" "$ARENA_RATE"; set_world_value "$config" "Rate.ArenaPoints" "$ARENA_RATE"; fi
+  if [[ -n "$REPAIR_COST" ]]; then require_number "--repair-cost" "$REPAIR_COST"; set_world_value "$config" "Rate.RepairCost" "$REPAIR_COST"; fi
+  if [[ -n "$SKIP_CINEMATICS" ]]; then require_integer "--skip-cinematics" "$SKIP_CINEMATICS"; set_world_value "$config" "SkipCinematics" "$SKIP_CINEMATICS"; fi
+  if [[ -n "$REFERENCED_DROP_RATE" ]]; then require_number "--referenced-drop" "$REFERENCED_DROP_RATE"; set_world_value "$config" "Rate.Drop.Item.ReferencedAmount" "$REFERENCED_DROP_RATE"; fi
+  if [[ -n "$GROUP_DROP_RATE" ]]; then require_number "--group-drop" "$GROUP_DROP_RATE"; set_world_value "$config" "Rate.Drop.Item.GroupAmount" "$GROUP_DROP_RATE"; fi
+  if [[ -n "$INSTANCE_RESET_RATE" ]]; then require_number "--instance-reset" "$INSTANCE_RESET_RATE"; set_world_value "$config" "Rate.InstanceResetTime" "$INSTANCE_RESET_RATE"; fi
   apply_performance_profile "$config" "$PERFORMANCE"
+}
+
+has_custom_overrides() {
+  [[ -n "$XP_RATE$KILL_XP_RATE$QUEST_XP_RATE$EXPLORE_XP_RATE$PET_XP_RATE$REP_RATE$DROP_RATE$MONEY_RATE$SKILL_RATE$START_LEVEL$START_MONEY$DUAL_SPEC_LEVEL$PERFORMANCE$HONOR_RATE$ARENA_RATE$REPAIR_COST$SKIP_CINEMATICS$REFERENCED_DROP_RATE$GROUP_DROP_RATE$INSTANCE_RESET_RATE" ]]
 }
 
 number_gt() {
@@ -733,6 +776,57 @@ validate_config_values() {
   fi
   if [[ "$group_amount" =~ ^[0-9]+([.][0-9]+)?$ ]] && { number_gt "$group_amount" "1.25" || number_lt "$group_amount" "1"; }; then
     warn "Rate.Drop.Item.GroupAmount is $group_amount. This affects grouped loot behavior; test before relying on it."
+  fi
+}
+
+create_snapshot_from_config() {
+  local name="$1"
+  local config="$2"
+  local reason="$3"
+  require_snapshot_name "$name"
+
+  local dir
+  dir="$(snapshot_dir "$name")"
+  if [[ -e "$dir" ]]; then
+    return 1
+  fi
+
+  local override
+  override="$(compose_override_file)"
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    printf '[dry-run] create snapshot %q at %q\n' "$name" "$dir"
+    printf '[dry-run] cp %q %q\n' "$config" "$dir/worldserver.conf"
+    [[ -f "$override" ]] && printf '[dry-run] cp %q %q\n' "$override" "$dir/docker-compose.override.yml"
+    return 0
+  fi
+
+  mkdir -p "$dir"
+  cp "$config" "$dir/worldserver.conf"
+  if [[ -f "$override" ]]; then
+    cp "$override" "$dir/docker-compose.override.yml"
+  fi
+  {
+    printf 'name=%s\n' "$name"
+    printf 'created=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf 'reason=%s\n' "$reason"
+    printf 'worldserver_config=%s\n' "$config"
+    printf 'compose_override=%s\n' "$override"
+  } > "$dir/manifest.txt"
+  return 0
+}
+
+ensure_baseline_snapshot() {
+  local config="$1"
+  local dir
+  dir="$(baseline_snapshot_dir)"
+
+  if [[ -d "$dir" ]]; then
+    return 0
+  fi
+
+  if create_snapshot_from_config "$BASELINE_SNAPSHOT_NAME" "$config" "Automatic snapshot before first wotlk-tuner apply command"; then
+    log "Saved automatic baseline snapshot: $BASELINE_SNAPSHOT_NAME"
   fi
 }
 
@@ -874,6 +968,7 @@ apply_preset() {
 
   local config
   config="$(ensure_worldserver_config)"
+  ensure_baseline_snapshot "$config"
   log "Applying preset '$preset' to: $config"
 
   case "$preset" in
@@ -895,6 +990,43 @@ apply_preset() {
   validate_config_values "$config"
 
   log "Preset '$preset' complete."
+  if [[ "$RESTART" == "1" ]]; then
+    restart_worldserver
+  else
+    log "Restart ac-worldserver for config changes to take effect."
+  fi
+}
+
+apply_custom() {
+  has_custom_overrides || die "apply-custom needs at least one override option, such as --xp 2, --rep 3, or --money 2."
+
+  local config
+  config="$(ensure_worldserver_config)"
+  ensure_baseline_snapshot "$config"
+  log "Applying custom overrides to: $config"
+
+  apply_overrides "$config"
+  validate_config_values "$config"
+
+  log "Custom overrides complete."
+  if [[ "$RESTART" == "1" ]]; then
+    restart_worldserver
+  else
+    log "Restart ac-worldserver for config changes to take effect."
+  fi
+}
+
+apply_defaults() {
+  local config
+  config="$(ensure_worldserver_config)"
+  ensure_baseline_snapshot "$config"
+  log "Applying conservative default values to: $config"
+
+  apply_blizzlike "$config"
+  apply_overrides "$config"
+  validate_config_values "$config"
+
+  log "Default values complete."
   if [[ "$RESTART" == "1" ]]; then
     restart_worldserver
   else
@@ -1051,28 +1183,7 @@ create_snapshot() {
     die "Snapshot already exists: $name. Use another name or remove $dir manually."
   fi
 
-  local override
-  override="$(compose_override_file)"
-
-  if [[ "$DRY_RUN" == "1" ]]; then
-    printf '[dry-run] mkdir -p %q\n' "$dir"
-    printf '[dry-run] cp %q %q\n' "$config" "$dir/worldserver.conf"
-    [[ -f "$override" ]] && printf '[dry-run] cp %q %q\n' "$override" "$dir/docker-compose.override.yml"
-    printf '[dry-run] write %q\n' "$dir/manifest.txt"
-    return 0
-  fi
-
-  mkdir -p "$dir"
-  cp "$config" "$dir/worldserver.conf"
-  if [[ -f "$override" ]]; then
-    cp "$override" "$dir/docker-compose.override.yml"
-  fi
-  {
-    printf 'name=%s\n' "$name"
-    printf 'created=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    printf 'worldserver_config=%s\n' "$config"
-    printf 'compose_override=%s\n' "$override"
-  } > "$dir/manifest.txt"
+  create_snapshot_from_config "$name" "$config" "Manual snapshot"
   log "Created snapshot '$name' in: $dir"
 }
 
@@ -1142,6 +1253,10 @@ restore_snapshot() {
   fi
 }
 
+restore_baseline() {
+  restore_snapshot "$BASELINE_SNAPSHOT_NAME"
+}
+
 restore_latest() {
   require_server_dir
 
@@ -1188,9 +1303,12 @@ main() {
     doctor) doctor ;;
     diagnose-rates) diagnose_rates ;;
     apply-preset) apply_preset "${COMMAND_ARGS[@]}" ;;
+    apply-custom) apply_custom ;;
+    apply-defaults) apply_defaults ;;
     snapshot) create_snapshot "${COMMAND_ARGS[@]}" ;;
     list-snapshots) list_snapshots ;;
     restore-snapshot) restore_snapshot "${COMMAND_ARGS[@]}" ;;
+    restore-baseline) restore_baseline ;;
     restore-latest) restore_latest ;;
     restart) restart_worldserver ;;
     *) die "Unknown command: $COMMAND" ;;
